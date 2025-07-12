@@ -1,4 +1,3 @@
-# Use the official Python image from the Docker Hub
 FROM python:3.10
 
 ENV PYTHONDONTWRITEBYTECODE 1
@@ -6,20 +5,22 @@ ENV PYTHONUNBUFFERED 1
 
 WORKDIR /app
 
-# Upgrade pip to the latest version
+# Install system dependencies
+RUN apt-get update && apt-get install -y libgl1-mesa-glx && rm -rf /var/lib/apt/lists/*
+
+# Upgrade pip
 RUN python -m pip install --upgrade pip
 
-# Copy the requirements file
-COPY requirements.txt /app/
+# Copy requirements first (to leverage Docker cache)
+COPY requirements.txt .
 
-# Force the installation of dependencies and show progress
+# Install Python dependencies
 RUN pip install --no-cache-dir --force-reinstall -r requirements.txt --verbose
-RUN apt-get update && apt-get install -y libgl1-mesa-glx
 
-# Copy the entire Django project
-COPY . /app/
+# Copy the full Django project
+COPY . .
 
 EXPOSE 8000
 
-# Command to run the application
+# Start Django dev server (for development only)
 CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
